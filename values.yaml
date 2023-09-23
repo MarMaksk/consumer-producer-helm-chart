@@ -1,0 +1,39 @@
+producer:
+  # Конфигурация деплоймента
+  deployment:
+    # Имя деплоймента
+    name: "producer"
+    # Число реплик
+    replicas: 1
+    # Настройки контейнера
+  container:
+      name: "producer-container"
+      resources: { }
+    # Настройки сервиса
+  service:
+      name: "producer-service"
+      port: 8080
+    # Информация об образе сервиса
+  image:
+      name: marmarks/producer
+      tag: "0.2"
+      # Загрузим образ, если локально его нет
+      pullPolicy: IfNotPresent
+
+
+consumer:
+  deployment:
+    name: "consumer"
+    replicas: 1
+  container:
+    name: "consumer-container"
+    resources: { }
+  service:
+    name: "consumer-service"
+    port: 80
+    #  тип сервиса: ClusterIP, NodePort, LoadBalancer
+    type: LoadBalancer
+  image:
+    name: marmarks/consumer
+    tag: "0.5"
+    pullPolicy: IfNotPresent

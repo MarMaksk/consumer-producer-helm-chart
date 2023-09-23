@@ -1,0 +1,18 @@
+# Версия API Helm Chart
+apiVersion: v2
+# Имя чарта
+name: marmarks-chart
+# Версия чарта
+version: 1.0.0
+# Описание
+description: Some project
+# Тип
+type: application
+sources:
+  - https://github.com/marmarks
+maintainers:
+  - name: Maksim Krylov
+    email: kryloumaksim@gmail.com
+    url: https://habr.com/ru/users/Marmaksmark/
+    # Версия приложения
+appVersion: 1.0.0

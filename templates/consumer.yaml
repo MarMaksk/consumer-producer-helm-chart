@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "marmarks-chart.consumer.deployment.name" . }}
+  labels:
+    {{- include "marmarks-chart.labels" . | nindent 4 }}
+    tier: consumer
+{{/*    Спецификация развёртывания*/}}
+spec:
+{{/*  Число реплик*/}}
+  replicas: {{ .Values.consumer.deployment.replicas }}
+  selector:
+{{/*    Метки подов*/}}
+    matchLabels:
+      {{- include "marmarks-chart.selectorLabels" . | nindent 6 }}
+      tier: consumer
+{{/*      Стратегия обновления развёртывания*/}}
+  strategy:
+{{/*    Пошаговое обновление*/}}
+    rollingUpdate:
+{{/*      Максимальное количество реплик для обновления*/}}
+      maxSurge: 25%
+{{/*      Максимальное число реплик недоступных во время обновления*/}}
+      maxUnavailable: 25%
+{{/*      Тип стратегии развёртывания*/}}
+    type: RollingUpdate
+{{/*    Шаблон создания подов*/}}
+  template:
+    metadata:
+{{/*      Аннотации*/}}
+      annotations:
+{{/*        Проверка чек суммы для обновления секретов и конфигов*/}}
+        checksum/config: {{ include "marmarks-chart.propertiesHash" . }}
+      labels:
+        {{- include "marmarks-chart.selectorLabels" . | nindent 8 }}
+        tier: consumer
+{{/*        Спецификации пода*/}}
+    spec:
+{{/*      Контейнер, который будет запущен в поде*/}}
+      containers:
+        - name: {{ include "marmarks-chart.consumer.container.name" . }}
+          image: "{{ .Values.consumer.image.name }}:{{ .Values.consumer.image.tag }}"
+          imagePullPolicy: {{ .Values.consumer.image.pullPolicy }}
+{{/*          Переменные окружения из конфиг мапы*/}}
+          envFrom:
+            - configMapRef:
+                name: {{ include "marmarks-chart.consumerConfig.defaultName" . }}
+{{/*          Переменные окружения секреты*/}}
+            - secretRef:
+                name: {{ include "marmarks-chart.producerSecrets.defaultName" . }}
+          readinessProbe:
+{{/*            Проверка доступности пода*/}}
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          ports:
+{{/*            Порты пода*/}}
+            - containerPort: 8080
+{{/*              Протокол*/}}
+              protocol: TCP
+          resources:
+{{/*            Ресурсы выделенные для контейнера*/}}
+            {{- toYaml .Values.consumer.container.resources | nindent 12 }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "marmarks-chart.consumer.service.name" . }}
+  labels:
+    {{- include "marmarks-chart.labels" . | nindent 4 }}
+    tier: consumer
+spec:
+  type: {{ .Values.consumer.service.type }}
+  ports:
+{{/*    Порт службы*/}}
+    - port: {{ .Values.consumer.service.port }}
+      protocol: TCP
+{{/*      Порт контейнера, на который будет направлен трафик*/}}
+      targetPort: 8080
+{{/*      Имя порта*/}}
+      name: http
+{{/*    Селектор для выбора подов, которые будут обслужены сервисом*/}}
+  selector:
+    {{- include "marmarks-chart.selectorLabels" . | nindent 4 }}
+    tier: consumer
+
+

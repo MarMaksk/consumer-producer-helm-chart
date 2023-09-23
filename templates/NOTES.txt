@@ -1,0 +1,15 @@
+1. Получение url адреса приложения:
+{{- if contains "NodePort" .Values.consumer.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "marmarks-chart.consumer.service.name" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.consumer.service.type }}
+     NOTE: Подождите пару минут пока LoadBalancer IP станет доступен.
+           Для слежения за статусом: 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "marmarks-chart.consumer.service.name" . }}'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "marmarks-chart.consumer.service.name" . }} -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+  echo http://$SERVICE_IP:{{ .Values.consumer.service.port }}
+{{- else if contains "ClusterIP" .Values.consumer.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name= {{ .Chart.Name }},app.kubernetes.io/instance={{ .Release.Name }},tier=consumer" -o jsonpath="{.items[0].metadata.name}")
+  echo "Зайдите на http://127.0.0.1:8080 для доступа к приложению"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:8080
+{{- end }}
